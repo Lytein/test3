@@ -1,0 +1,70 @@
+﻿@inherits LayoutComponentBase
+@using StoreManagementBlazorApp.Services
+@inject StoreService Store
+@inject NavigationManager Navigation
+
+<div class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <!-- Brand -->
+            <a class="navbar-brand fw-bold" href="/">Store</a>
+
+            <!-- Toggler cho mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Menu -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/store">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/store/cart">Cart</a>
+                    </li>
+                </ul>
+
+                <!-- Right side -->
+                @if (Store.CurrentUser == null)
+                {
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-light btn-sm" @onclick='() => Navigation.NavigateTo("/login")'>Login</button>
+                        <button class="btn btn-light btn-sm" @onclick='() => Navigation.NavigateTo("/register")'>Register</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Cart Icon -->
+                        <button class="btn btn-outline-light position-relative">
+                            <i class="bi bi-cart">
+                                <a class="nav-link" href="/store/cart">🛒</a>
+                            </i>
+                            @if (Store.Cart.Count > 0)
+                            {
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    @Store.Cart.Count
+                                </span>
+                            }
+                        </button>
+
+                        <!-- User Icon -->
+                        @* Profile *@
+                        <button class="btn btn-outline-light">
+                            <i class="bi bi-person">
+                                <a href="">Đăng nhập</a>
+                            </i>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="flex-grow-1 container py-4">
+        @Body
+    </div>
+</div>

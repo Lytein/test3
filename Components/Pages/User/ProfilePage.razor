@@ -1,0 +1,23 @@
+﻿@layout UserLayout
+@page "/store/profile"
+@using StoreManagementBlazorApp.Services
+@inject StoreService Store
+
+<h1 class="mb-4">Profile</h1>
+
+<!-- User Information -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">User Information</h5>
+        <p><strong>Name:</strong> @Store.CurrentUser?.Name</p>
+        <p><strong>Email:</strong> @Store.CurrentUser?.Email</p>
+    </div>
+</div>
+
+<!-- Orders -->
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Orders</h5>
+        <p class="text-muted">Order history will appear here (tạm thời để trống)</p>
+    </div>
+</div>
