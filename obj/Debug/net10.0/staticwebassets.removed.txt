@@ -1,0 +1,3 @@
+D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\images\baketball.jpg
+D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\images\coffe.jpg
+D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\images\shose.jpg
