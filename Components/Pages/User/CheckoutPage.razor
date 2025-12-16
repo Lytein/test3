@@ -1,6 +1,6 @@
-﻿@page "/store/checkout"
-@layout UserLayout
+﻿@page "/checkout"
 @using StoreManagementBlazorApp.Services
+@using System.Globalization
 @inject StoreService Store
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -17,12 +17,12 @@
 
                 <div class="mb-2">
                     <label class="form-label">Full Name</label>
-                    <input value="@Store.CurrentUser?.Name" readonly class="form-control" />
+                    <input value="@Store.CurrentCustomer?.name" readonly class="form-control" />
                 </div>
 
                 <div class="mb-2">
                     <label class="form-label">Email</label>
-                    <input value="@Store.CurrentUser?.Email" readonly class="form-control" />
+                    <input value="@Store.CurrentCustomer?.email" readonly class="form-control" />
                 </div>
 
                 <div class="mb-2">
@@ -41,8 +41,10 @@
                     @foreach (var item in Store.Cart)
                     {
                         <div class="d-flex justify-content-between small mb-1">
-                            <span>@item.Product.Name x @item.Quantity</span>
-                            <span>@(item.Product.Price* item.Quantity).ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
+                            <span>@item.Product.Name x item.Quantity</span>
+                            <span>
+                                @string.Format(new CultureInfo("vi-VN"), "{0:N0} đ", item.Product.Price * item.Quantity)
+                            </span>
                         </div>
                     }
 
@@ -50,7 +52,7 @@
 
                     <div class="d-flex justify-content-between fw-bold mb-3">
                         <span>Total</span>
-                        <span>@Store.CartTotal.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
+                        <span>@string.Format(new CultureInfo("vi-VN"), "{0:N0} đ"  ,Store.CartTotal)</span>
                     </div>
 
                     <button class="btn btn-primary w-100"
@@ -83,11 +85,11 @@ else
 
     private void HandleCheckout()
     {
-        if (Store.CurrentUser == null || string.IsNullOrEmpty(ShippingAddress))
+        if (Store.CurrentCustomer == null || string.IsNullOrEmpty(ShippingAddress))
             return;
 
         // Simulate order creation
-        Console.WriteLine($"Order placed for {Store.CurrentUser.Name} with address: {ShippingAddress}");
+        Console.WriteLine($"Order placed for {Store.CurrentCustomer.name} with address: {ShippingAddress}");
 
         Store.ClearCart();
         Navigation.NavigateTo("/store/profile");

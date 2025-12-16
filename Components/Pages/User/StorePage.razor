@@ -1,11 +1,10 @@
 ﻿@page "/store"
-@layout UserLayout
 @using StoreManagementBlazorApp.Services
 @using StoreManagementBlazorApp.Entities
 @inject StoreService Store
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
-
+<div class="store-page">
 <h1 class="mb-4">Our Products</h1>
 <p class="text-muted mb-4">Discover amazing products at great prices</p>
 
@@ -31,19 +30,12 @@
                 <div class="position-relative" style="aspect-ratio:4/3;">
                     <img src="@(!string.IsNullOrEmpty(product.Image) ? product.Image : "/images/phone.jpg")"
                          class="card-img-top object-fit-cover h-100 w-100" />
-                    @if (product.Stock < 10)
-                    {
-                        <span class="position-absolute top-0 end-0 m-2 badge bg-warning text-dark">
-                            Only @product.Stock left
-                        </span>
-                    }
                 </div>
-
                 <!-- Product Info -->
                 <div class="card-body d-flex flex-column">
                     <small class="text-muted">@product.Category</small>
                     <h5 class="card-title text-truncate mt-1">@product.Name</h5>
-                    <p class="card-text text-truncate-2-lines text-muted mb-2">@product.Description</p>
+                    <p class="card-text text-truncate-2-lines text-muted mb-2">@product.unit</p>
                     <p class="fw-bold mt-auto mb-2">@product.Price.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</p>
 
                     <!-- Actions -->
@@ -62,20 +54,28 @@
     }
 </div>
 
-@if (!FilteredProducts.Any())
-{
-    <div class="py-5 text-center">
-        <p class="text-muted">No products found</p>
-    </div>
-}
+    @code {
+        private string SearchQuery = "";
+        private string FilterCategory = "all";
 
-@code {
-    private string SearchQuery { get; set; } = "";
-    private string FilterCategory { get; set; } = "all";
-    private List<string> Categories = new() { "Electronics", "Fashion", "Home", "Sports", "Books" };
+        private List<string> Categories = new()
+        {
+        "Electronics", "Fashion", "Home", "Sports", "Books"
+        };
 
-    private IEnumerable<Product> FilteredProducts => Store.Products
-        .Where(p => p.Stock > 0 &&
-                    (FilterCategory == "all" || p.Category == FilterCategory) &&
-                    (string.IsNullOrEmpty(SearchQuery) || p.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)));
-}
+        private IEnumerable<Product> FilteredProducts =>
+        Store.Products.Where(p =>
+        (FilterCategory == "all" || p.Category == FilterCategory) &&
+        (string.IsNullOrWhiteSpace(SearchQuery) ||
+        p.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+        );
+
+        protected override async Task OnInitializedAsync()
+        {
+            await Store.LoadProductsAsync();
+            Console.WriteLine($"UI products: {Store.Products.Count}");
+        }
+    }
+
+
+</div>

@@ -12,7 +12,10 @@ builder.Services.AddHttpClient<ApiService>(client =>
     client.BaseAddress = new Uri("https://localhost:7196/");
 });
 
-builder.Services.AddSingleton<StoreService>();
+
+builder.Services.AddScoped<TokenState>();
+builder.Services.AddScoped<StoreService>();
+
 
 var app = builder.Build();
 

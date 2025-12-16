@@ -1,45 +1,151 @@
 ﻿using StoreManagementBlazorApp.Entities;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using static System.Net.WebRequestMethods;
 
 namespace StoreManagementBlazorApp.Services
 {
     public class ApiService
     {
         private readonly HttpClient _http;
-        public ApiService(HttpClient http) => _http = http;
+        private readonly TokenState _token;
 
-        // ======= USER / AUTH =======
-        public async Task<UserDto?> LoginAsync(string username, string password)
+        public ApiService(HttpClient http, TokenState token)
         {
-            var response = await _http.PostAsJsonAsync("api/user/login",
-                new { username, password });
+            _http = http;
+            _token = token;
+        }
+        /* Categories
+         */
 
-            if (!response.IsSuccessStatusCode) return null;
 
-            return await response.Content.ReadFromJsonAsync<UserDto>();
+        /* Product*/
+        public async Task<List<Product>> GetProducts()
+        {
+
+            return await _http.GetFromJsonAsync<List<Product>>("api/product")
+                ?? new List<Product>();
         }
 
-        public async Task<bool> RegisterAsync(string fullName, string username, string password)
+        public async Task<Product?> AddproductAsync(Product product)
         {
-            var payload = new
-            {
-                full_name = fullName,
-                username,
-                password,
-                role = 1 // default user
-            };
+            var response = await _http.PostAsJsonAsync("api/customer", product);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<Product>()
+                : null;
+        }
 
-            var response = await _http.PostAsJsonAsync("api/user/register", payload);
+        public async Task<bool> UpdateproductAsync(Product product)
+        {
+            var response = await _http.PutAsJsonAsync($"api/product/{product.Id}", product);
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<bool> DeleteproductAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"api/product/{id}");
+            return response.IsSuccessStatusCode;
+        }
+
+        /* =====================
+           AUTH / LOGIN
+        ===================== */
+        public async Task<AuthResult?> LoginAsync(string username, string password)
+        {
+            // ---- ADMIN / STAFF ----
+            var userRes = await _http.PostAsJsonAsync("api/user/login", new
+            {
+                Username = username,
+                Password = password
+            });
+
+            if (userRes.IsSuccessStatusCode)
+            {
+                var data = await userRes.Content.ReadFromJsonAsync<UserLoginResponse>();
+
+                SaveToken(data!.token, data.role);
+                return new AuthResult
+                {
+                    Token = data.token,
+                    Role = data.role,
+                    User = new UserDto
+                    {
+                        User_Id = data.user_id,
+                        Username = data.username,
+                        Full_Name = data.full_name,
+                        Role = data.role,
+                        Created_At = data.created_at
+                    }
+                };
+            }
+
+            // ---- CUSTOMER ----
+            var cusRes = await _http.PostAsJsonAsync("api/customer-auth/login", new
+            {
+                username,
+                password
+            });
+
+            if (!cusRes.IsSuccessStatusCode)
+                return null;
+
+            var cusData = await cusRes.Content.ReadFromJsonAsync<CustomerResponse>();
+
+            SaveToken(cusData!.token, "customer");
+
+            return new AuthResult
+            {
+                Token = cusData.token,
+                Role = "customer",
+                Customer = cusData.customer
+            };
+        }
+
+        private void SaveToken(string token, string role)
+        {
+            _token.Token = token;
+            _token.Role = role;
+
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        /* =====================
+           CUSTOMER REGISTER
+        ===================== */
+        public async Task<bool> RegisterAsync(
+            string fullName,
+            string username,
+            string password,
+            string email,
+            string phone,
+            string address)
+            {
+                var res = await _http.PostAsJsonAsync(
+                    "api/customer-auth/register",
+                    new
+                    {
+                        full_name = fullName,
+                        username,
+                        password,
+                        email,
+                        phone,
+                        address
+                    });
+
+                return res.IsSuccessStatusCode;
+            }
+
+
+        /* =====================
+           USERS
+        ===================== */
         public async Task<List<UserDto>> GetUsersAsync()
         {
             try
             {
-                var response = await _http.GetAsync("api/user");
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadFromJsonAsync<List<UserDto>>() ?? new List<UserDto>();
+                return await _http.GetFromJsonAsync<List<UserDto>>("api/user")
+                    ?? new List<UserDto>();
             }
             catch
             {
@@ -47,22 +153,26 @@ namespace StoreManagementBlazorApp.Services
             }
         }
 
-        // ======= CUSTOMER =======
+        /* =====================
+           CUSTOMERS
+        ===================== */
         public async Task<List<Customer>> GetCustomersAsync()
         {
-            return await _http.GetFromJsonAsync<List<Customer>>("api/customer") ?? new List<Customer>();
+            return await _http.GetFromJsonAsync<List<Customer>>("api/customer")
+                ?? new List<Customer>();
         }
 
         public async Task<Customer?> AddCustomerAsync(Customer customer)
         {
             var response = await _http.PostAsJsonAsync("api/customer", customer);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<Customer>();
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<Customer>()
+                : null;
         }
 
         public async Task<bool> UpdateCustomerAsync(Customer customer)
         {
-            var response = await _http.PutAsJsonAsync($"api/customer/{customer.customer_id}", customer);
+            var response = await _http.PutAsJsonAsync($"api/customer/{customer.Id}", customer);
             return response.IsSuccessStatusCode;
         }
 
@@ -71,8 +181,21 @@ namespace StoreManagementBlazorApp.Services
             var response = await _http.DeleteAsync($"api/customer/{id}");
             return response.IsSuccessStatusCode;
         }
+        public async Task<Customer?> GetCustomerByIdAsync(int customerId)
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<Customer>($"api/customer/{customerId}");
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
-        // ======= GENERIC GET / POST / PUT / DELETE =======
+        /* =====================
+           GENERIC
+        ===================== */
         public async Task<List<T>> GetListAsync<T>(string route)
         {
             return await _http.GetFromJsonAsync<List<T>>(route) ?? new List<T>();
@@ -81,8 +204,9 @@ namespace StoreManagementBlazorApp.Services
         public async Task<TResponse?> PostAsync<TRequest, TResponse>(string route, TRequest obj)
         {
             var response = await _http.PostAsJsonAsync(route, obj);
-            if (!response.IsSuccessStatusCode) return default;
-            return await response.Content.ReadFromJsonAsync<TResponse>();
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<TResponse>()
+                : default;
         }
 
         public async Task<bool> PutAsync<T>(string route, T obj)
@@ -97,4 +221,24 @@ namespace StoreManagementBlazorApp.Services
             return response.IsSuccessStatusCode;
         }
     }
-}
+
+    /* =====================
+       LOGIN RESPONSE DTOs
+    ===================== */
+    public class UserLoginResponse
+    {
+        public string token { get; set; } = "";
+        public int user_id { get; set; }
+        public string username { get; set; } = "";
+        public string full_name { get; set; } = "";
+        public string role { get; set; }
+        public DateTime created_at { get; set; }
+    }
+
+    public class CustomerResponse
+    {
+        public string token { get; set; } = "";
+        public Customer customer { get; set; } = null!;
+    }
+    
+    }

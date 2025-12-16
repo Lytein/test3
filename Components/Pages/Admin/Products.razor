@@ -1,51 +1,64 @@
 ﻿@page "/products"
+@using StoreManagementBlazorApp.Entities
+@using StoreManagementBlazorApp.Services
+@inject StoreService Store
+@inject ApiService ProductAPI
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<h1 class="text-3xl font-bold mb-2">Customers</h1>
+<h1 class="text-3xl font-bold mb-2">Products</h1>
 
 <div class="d-flex justify-content-between align-items-center my-4">
-    <input class="form-control me-2" style="flex:1" placeholder="Search customers..." @bind="searchQuery" />
-    <button class="btn btn-primary" @onclick="OpenAdd">Add Customer</button>
+    <input class="form-control me-2" style="flex:1" placeholder="Search Products..." @bind="searchQuery" />
+    @if (Store.IsAdmin) 
+    {   
+        <button class="btn btn-primary" @onclick="() => OpenAdd()">Add Customer</button>            
+    }
 </div>
 
 <table class="table table-bordered">
     <thead>
         <tr>
             <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Address</th>
+            <th>Category</th>
+            <th>Unit</th>
+            <th>Price</th>
             <th>Created At</th>
-            <th class="text-center">Activity</th>
+            @if (Store.IsAdmin)
+            {
+                <th class="text-center">Activity</th>            
+            }
         </tr>
     </thead>
     <tbody>
-        @if (PagedCustomers.Any())
+        @if (PagedProducts.Any())
         {
-            @foreach (var c in PagedCustomers)
+            @foreach (var p in PagedProducts)
             {
                 <tr>
-                    <td>@c.Name</td>
-                    <td>@c.Email</td>
-                    <td>@c.Phone</td>
-                    <td>@c.Address</td>
-                    <td>@c.CreatedAt.ToString("dd/MM/yyyy")</td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEdit(c)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => ConfirmDelete(c.Id)">Delete</button>
-                    </td>
+                    <td>@p.Name</td>
+                    <td>@p.Category</td>
+                    <td>@p.unit</td>
+                    <td>@p.Price</td>
+                    <td>@p.created_at.ToString("dd/MM/yyyy")</td>
+                    @if (Store.IsAdmin)
+                    {
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEdit(p)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => ConfirmDelete(p.Id)">Delete</button>
+                        </td>                    
+                    }
                 </tr>
             }
         }
         else
         {
-            <tr><td colspan="6" class="text-center">No data available</td></tr>
+            <tr><td colspan="6">Loading...</td></tr>
         }
     </tbody>
 </table>
 
-@if (Customers.Count > PageSize)
+@if (products != null && products.Count > PageSize)
 {
     <nav class="mt-2">
         <ul class="pagination justify-content-center">
@@ -78,16 +91,16 @@
                 <div class="modal-body">
                     <p>Name</p>
                     <input class="form-control mb-2" placeholder="Name" @bind="form.Name" />
-                    <p>Email</p>
-                    <input class="form-control mb-2" placeholder="Email" @bind="form.Email" />
-                    <p>Phone</p>
-                    <input class="form-control mb-2" placeholder="Phone" @bind="form.Phone" />
-                    <p>Address</p>
-                    <input class="form-control mb-2" placeholder="Address" @bind="form.Address" />
+                    <p>Category</p>
+                    <input class="form-control mb-2" placeholder="Email" @bind="form.Category" />
+                    <p>Unit</p>
+                    <input class="form-control mb-2" placeholder="Phone" @bind="form.unit" />
+                    <p>Price</p>
+                    <input class="form-control mb-2" placeholder="Address" @bind="form.Price" />
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="CloseDialog">Cancel</button>
-                    <button class="btn btn-primary" @onclick="SaveCustomer">Save</button>
+                    <button class="btn btn-primary" @onclick="SaveProduct">Save</button>
                 </div>
             </div>
         </div>
@@ -95,6 +108,22 @@
 }
 
 @code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (JS != null && Store.CurrentCustomer == null)
+        {
+            try
+            {
+                await Store.LoadAuthFromStorageAsync();
+                StateHasChanged(); // cập nhật UI
+            }
+            catch (JSDisconnectedException)
+            {
+                // JS chưa sẵn sàng, bỏ qua
+            }
+        }
+    }
+
     string _searchQuery = "";
     string searchQuery
     {
@@ -108,148 +137,141 @@
             }
         }
     }
-
     bool showDialog;
     string dialogTitle = "";
     bool isEdit;
 
-    // Dữ liệu tạm thời
-    List<Customer> Customers = new();
-    Customer form = new();
+    List<Product>? products;
+    Product form = new();
 
     // Phân trang
     private int CurrentPage = 1;
     private int PageSize = 10;
 
-    private IEnumerable<Customer> FilteredCustomers =>
-        Customers.Where(c =>
-            (!string.IsNullOrEmpty(c.Name) && c.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
-            (!string.IsNullOrEmpty(c.Email) && c.Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
-            (!string.IsNullOrEmpty(c.Phone) && c.Phone.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
-            (!string.IsNullOrEmpty(c.Address) && c.Address.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-        );
+    private IEnumerable<Product> FilteredProducts => products?.Where(p =>
+        (!string.IsNullOrEmpty(p.Name) && p.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+        (!string.IsNullOrEmpty(p.Category) && p.Category.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+        (!string.IsNullOrEmpty(p.unit) && p.unit.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+        (!string.IsNullOrEmpty(p.Price.ToString()) && p.Price.ToString().Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+    ) ?? Enumerable.Empty<Product>();
 
-    private IEnumerable<Customer> PagedCustomers =>
-        FilteredCustomers
+    private IEnumerable<Product> PagedProducts =>
+        FilteredProducts
             .Skip((CurrentPage - 1) * PageSize)
             .Take(PageSize);
 
     private int TotalPages =>
-        (int)Math.Ceiling((double)FilteredCustomers.Count() / PageSize);
+        (int)Math.Ceiling((double)FilteredProducts.Count() / PageSize);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Mock data tạm
-        Customers = new List<Customer>();
-        for (int i = 1; i <= 25; i++)
+        await LoadProducts();
+    }
+
+    async Task LoadProducts()
+    {
+        try
         {
-            Customers.Add(new Customer
-            {
-                Id = i,
-                Name = $"Customer {i}",
-                Email = $"customer{i}@mail.com",
-                Phone = $"012345678{i % 10}",
-                Address = $"Address {i}",
-                CreatedAt = DateTime.Now.AddDays(-i)
-            });
+            products = await ProductAPI.GetProducts();
+            CurrentPage = 1; // Reset page khi reload
+        }
+        catch
+        {
+            products = new List<Product>();
         }
     }
 
     void OpenAdd()
     {
-        form = new Customer
+        // Khởi tạo form mới với các trường rỗng
+        form = new Product
         {
             Name = "",
-            Email = "",
-            Phone = "",
-            Address = "",
-            CreatedAt = DateTime.Now
+            Category = "",
+            bar_code = "",
+            unit = "",
+            Price = 0,
+            created_at = DateTime.Now
         };
-        dialogTitle = "Add Customer";
+
+        dialogTitle = "Add Products"; // Tiêu đề modal
         isEdit = false;
-        showDialog = true;
+        showDialog = true; // Mở modal
     }
 
-    void OpenEdit(Customer c)
+
+    void OpenEdit(Product p)
     {
-        form = new Customer
+        form = new Product
         {
-            Id = c.Id,
-            Name = c.Name,
-            Email = c.Email,
-            Phone = c.Phone,
-            Address = c.Address,
-            CreatedAt = c.CreatedAt
+            Id = p.Id,
+            Name = p.Name,
+            Category = p.Category,
+            Price = p.Price,
+            unit = p.unit,
+            created_at = p.created_at
         };
         dialogTitle = "Edit Customer";
         isEdit = true;
         showDialog = true;
     }
 
-    void SaveCustomer()
+    async Task SaveProduct()
     {
         if (isEdit)
         {
-            // Chỉ cập nhật mock data
-            var item = Customers.FirstOrDefault(x => x.Id == form.Id);
-            if (item != null)
-            {
-                item.Name = form.Name;
-                item.Email = form.Email;
-                item.Phone = form.Phone;
-                item.Address = form.Address;
-            }
+            await ProductAPI.UpdateproductAsync(form);
         }
         else
         {
-            form.Id = Customers.Count + 1;
-            Customers.Add(form);
+            form.created_at = DateTime.Now;
+            await ProductAPI.AddproductAsync(form);
         }
 
         showDialog = false;
+        await LoadProducts();
     }
 
     async Task ConfirmDelete(int id)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this customer?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa sản phẩm này?");
         if (!confirmed) return;
 
-        DeleteCustomer(id);
+        await DeleteCustomer(id);
     }
 
-    void DeleteCustomer(int id)
+    async Task DeleteCustomer(int id)
     {
-        var item = Customers.FirstOrDefault(x => x.Id == id);
-        if (item != null) Customers.Remove(item);
+        await ProductAPI.DeleteCustomerAsync(id);
+        await LoadProducts();
     }
 
     void CloseDialog() => showDialog = false;
 
     void PrevPage()
     {
-        if (CurrentPage > 1) CurrentPage--;
+        if (CurrentPage > 1)
+        {
+            CurrentPage--;
+            StateHasChanged();
+        }
     }
 
     void NextPage()
     {
-        if (CurrentPage < TotalPages) CurrentPage++;
+        if (CurrentPage < TotalPages)
+        {
+            CurrentPage++;
+            StateHasChanged();
+        }
     }
 
     void GoToPage(int page)
     {
         if (page < 1) page = 1;
         if (page > TotalPages) page = TotalPages;
-        CurrentPage = page;
-    }
 
-    // Model tạm
-    public class Customer
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Phone { get; set; } = "";
-        public string Address { get; set; } = "";
-        public DateTime CreatedAt { get; set; }
+        CurrentPage = page;
+        StateHasChanged();
     }
 }

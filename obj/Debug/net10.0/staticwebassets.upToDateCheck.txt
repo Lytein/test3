@@ -1,9 +1,11 @@
 wwwroot\app.css
+wwwroot\css\pages\store.css
 wwwroot\favicon.png
 wwwroot\images\basketball.jpg
 wwwroot\images\coffee.jpg
 wwwroot\images\phone.jpg
 wwwroot\images\shoes.jpg
+wwwroot\js\localStorage.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
@@ -52,9 +54,9 @@ Components\Layout\ReconnectModal.razor.js
 C:\Users\lamta\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.0\build\..\_framework\blazor.web.js
 C:\Users\lamta\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.0\build\..\_framework\blazor.server.js
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\app.css
+D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\js\localStorage.js
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
-D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css.map
@@ -99,3 +101,5 @@ D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\boo
 D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\Components\Layout\ReconnectModal.razor.js
 C:\Users\lamta\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.0\_framework\blazor.web.js
 C:\Users\lamta\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.0\_framework\blazor.server.js
+D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\css\pages\store.css
+D:\.Net_WEB_API\store_management_blazor\StoreManagementBlazorApp\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css

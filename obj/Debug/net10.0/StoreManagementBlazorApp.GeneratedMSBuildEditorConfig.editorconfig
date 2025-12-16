@@ -30,8 +30,8 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcRW1wdHlMYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/.Net_WEB_API/store_management_blazor/StoreManagementBlazorApp/Components/Layout/UserLayout.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcVXNlckxheW91dC5yYXpvcg==
+[D:/.Net_WEB_API/store_management_blazor/StoreManagementBlazorApp/Components/LogoutButton.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMb2dvdXRCdXR0b24ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/.Net_WEB_API/store_management_blazor/StoreManagementBlazorApp/Components/Pages/Admin/Categories.razor]

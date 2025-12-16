@@ -36,7 +36,7 @@
                     <td>@c.created_at.ToString("dd/MM/yyyy")</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEdit(c)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => ConfirmDelete(c.customer_id)">Delete</button>
+                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => ConfirmDelete(c.Id)">Delete</button>
                     </td>
                 </tr>
             }
@@ -177,7 +177,7 @@
     {
         form = new Customer
         {
-            customer_id = c.customer_id,
+            Id = c.Id,
             name = c.name,
             email = c.email,
             phone = c.phone,

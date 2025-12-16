@@ -5,11 +5,12 @@
 @using StoreManagementBlazorApp.Entities
 @inject ApiService Api
 @inject NavigationManager Nav
+@inject StoreService Store
+@inject IJSRuntime JS
 
 <div class="d-flex justify-content-center align-items-center min-vh-100 bg-light p-3">
     <div class="card shadow-sm" style="width: 100%; max-width: 420px;">
         <div class="card-body text-center">
-
             <div class="mb-4">
                 <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
                      style="width: 70px; height: 70px;">
@@ -23,10 +24,10 @@
             <!-- Tabs -->
             <ul class="nav nav-tabs mt-4" id="authTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" type="button" @onclick="() => showLogin = true">Login</button>
+                    <button class="nav-link @(showLogin ? "active" : "")" type="button" @onclick="() => showLogin = true">Login</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" type="button" @onclick="() => showLogin = false">Register</button>
+                    <button class="nav-link @(!showLogin ? "active" : "")" type="button" @onclick="() => showLogin = false">Register</button>
                 </li>
             </ul>
 
@@ -43,18 +44,20 @@
                         <label class="form-label">Username</label>
                         <input class="form-control" @bind="username" placeholder="Username" />
                     </div>
-
                     <div class="text-start mt-2">
                         <label class="form-label">Password</label>
                         <input class="form-control" type="password" @bind="password" placeholder="Password" />
                     </div>
-
                     <button class="btn btn-primary w-100 mt-3" @onclick="HandleLogin">Login</button>
-
                 }
                 else
                 {
                     <!-- REGISTER FORM -->
+                    @if (!string.IsNullOrEmpty(regError))
+                    {
+                        <div class="alert alert-danger py-2">@regError</div>
+                    }
+
                     <div class="text-start mt-2">
                         <label class="form-label">Full Name</label>
                         <input class="form-control" @bind="regFullName" placeholder="Full Name" />
@@ -71,13 +74,20 @@
                         <label class="form-label">Confirm Password</label>
                         <input class="form-control" type="password" @bind="regConfirmPassword" placeholder="Confirm Password" />
                     </div>
+                    <div class="text-start mt-2">
+                        <label class="form-label">Email</label>
+                        <input class="form-control" @bind="regEmail" />
+                    </div>
+                    <div class="text-start mt-2">
+                        <label class="form-label">Phone</label>
+                        <input class="form-control" @bind="regPhone" />
+                    </div>
+                    <div class="text-start mt-2">
+                        <label class="form-label">Address</label>
+                        <input class="form-control" @bind="regAddress" />
+                    </div>
 
                     <button class="btn btn-success w-100 mt-3" @onclick="HandleRegister">Register</button>
-
-                    @if (!string.IsNullOrEmpty(regError))
-                    {
-                        <div class="alert alert-danger py-2 mt-2">@regError</div>
-                    }
                 }
             </div>
         </div>
@@ -89,8 +99,6 @@
     string username = "";
     string password = "";
     string error = "";
-    string lastUsername = "";
-    string lastPassword = "";
 
     // --- register state ---
     string regFullName = "";
@@ -98,33 +106,63 @@
     string regPassword = "";
     string regConfirmPassword = "";
     string regError = "";
+    string regEmail = "";
+    string regPhone = "";
+    string regAddress = "";
 
     bool showLogin = true;
-
-    List<UserDto>? users;
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadUsers();
+        if (firstRender)
+        {
+            await Store.LoadAuthFromStorageAsync();
+        }
     }
 
     private async Task HandleLogin()
     {
         error = "";
-        lastUsername = username;
-        lastPassword = password;
-
         try
         {
-            var user = await Api.LoginAsync(username, password);
-            if (user == null)
+            var auth = await Api.LoginAsync(username, password);
+            if (auth == null)
             {
                 error = "Sai tài khoản hoặc mật khẩu";
                 return;
             }
 
-            Console.WriteLine($"Login success: {user.Full_Name} ({user.Username})");
-            Nav.NavigateTo("/index", true);
+            if (auth.Role == "admin")
+            {
+                Store.SetAdmin(auth.User, auth.Token ?? "");
+                await Store.SaveToStorageAsync();
+                Nav.NavigateTo("/index");
+                return;
+            }
+
+            if (auth.Role == "staff")
+            {
+                Store.SetStaff(auth.User, auth.Token ?? "");
+                await Store.SaveToStorageAsync();
+                Nav.NavigateTo("/index");
+                return;
+            }
+
+
+            if (auth.Role == "customer")
+            {
+                if (auth.Customer == null)
+                {
+                    error = "Không lấy được thông tin khách hàng";
+                    return;
+                }
+
+                Store.SetCustomer(auth.Customer, auth.Token ?? "");
+                await Store.SaveToStorageAsync(); // ✅ OK
+                Nav.NavigateTo("/index");
+                return;
+            }
+
+            error = "Không xác định quyền truy cập";
         }
         catch (Exception ex)
         {
@@ -136,7 +174,9 @@
     {
         regError = "";
 
-        if (string.IsNullOrWhiteSpace(regUsername) || string.IsNullOrWhiteSpace(regPassword) || string.IsNullOrWhiteSpace(regFullName))
+        if (string.IsNullOrWhiteSpace(regUsername) ||
+            string.IsNullOrWhiteSpace(regPassword) ||
+            string.IsNullOrWhiteSpace(regFullName))
         {
             regError = "Vui lòng nhập đủ thông tin.";
             return;
@@ -150,7 +190,14 @@
 
         try
         {
-            bool success = await Api.RegisterAsync(regFullName, regUsername, regPassword);
+            bool success = await Api.RegisterAsync(
+                regFullName,
+                regUsername,
+                regPassword,
+                regEmail,
+                regPhone,
+                regAddress
+            );
 
             if (!success)
             {
@@ -158,34 +205,13 @@
                 return;
             }
 
-            Console.WriteLine($"Registered: {regFullName} / {regUsername}");
             regError = "Đăng ký thành công!";
-            showLogin = true; // quay về login
-        }
-        catch (HttpRequestException httpEx)
-        {
-            regError = "Lỗi kết nối API";
-            Console.WriteLine($"HttpRequestException: {httpEx.Message}");
+            showLogin = true;
         }
         catch (Exception ex)
         {
             regError = $"Lỗi không xác định: {ex.Message}";
-            Console.WriteLine(ex.Message);
-        }
-    }
-
-
-    private async Task LoadUsers()
-    {
-        try
-        {
-            users = await Api.GetUsersAsync();
-            Console.WriteLine($"Loaded {users.Count} users");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading users: {ex.Message}");
-            users = new List<UserDto>();
         }
     }
 }
+

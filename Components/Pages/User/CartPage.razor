@@ -1,6 +1,7 @@
-﻿@page "/store/cart"
-@layout UserLayout
+﻿@page "/cart"
+@using StoreManagementBlazorApp.Components.Pages.Admin
 @using StoreManagementBlazorApp.Services
+@using System.Globalization
 @inject StoreService Store
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -32,7 +33,7 @@ else
                             <h5 class="card-title mb-1">@item.Product.Name</h5>
                             <p class="text-muted mb-1">@item.Product.Category</p>
                             <p class="fw-bold mb-0">
-                                @item.Product.Price.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                                @string.Format(new CultureInfo("vi-VN"), "{0:N0} đ", item.Product.Price)
                             </p>
                         </div>
                         <div class="col-auto d-flex flex-column align-items-end justify-content-between">
@@ -49,7 +50,7 @@ else
                                 <input type="text" readonly value="@item.Quantity" class="form-control text-center p-1" style="width:50px;" />
                                 <button class="btn btn-outline-secondary btn-sm"
                                         @onclick="() => Store.UpdateCartQuantity(item.Product.Id, item.Quantity + 1)"
-                                        disabled="@((item.Quantity) >= item.Product.Stock)">
+                                        disabled="@((item.Quantity) >= 10)">
                                     +
                                 </button>
                             </div>
@@ -78,7 +79,7 @@ else
                         <span>Total</span>
                         <span>@Store.CartTotal.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
                     </div>
-                    <button class="btn btn-primary w-100" @onclick='() => Navigation.NavigateTo("/store/checkout")'>
+                    <button class="btn btn-primary w-100" @onclick='() => Navigation.NavigateTo("/checkout")'>
                         Proceed to Checkout
                     </button>
                 </div>

@@ -1,5 +1,4 @@
-﻿@layout UserLayout
-@page "/store/products/{Id}"
+﻿@page "/store/products/{Id:int}"
 @using StoreManagementBlazorApp.Services
 @using StoreManagementBlazorApp.Entities
 @inject StoreService Store
@@ -27,7 +26,7 @@ else
         <div class="col-md-6">
             <h2 class="fw-bold">@Product.Name</h2>
             <p class="text-muted mb-2">@Product.Category</p>
-            <p class="mb-3">@Product.Description</p>
+            <p class="mb-3">@Product.unit</p>
             <p class="fw-bold fs-4">@Product.Price.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</p>
             <button class="btn btn-primary mt-3"
                     @onclick="() => Store.AddToCart(Product, 1)">
@@ -38,7 +37,7 @@ else
 }
 
 @code {
-    [Parameter] public string Id { get; set; } = "";
+    [Parameter] public int Id { get; set; }
     private Product? Product { get; set; }
 
     protected override void OnInitialized()
